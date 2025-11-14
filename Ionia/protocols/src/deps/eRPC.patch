@@ -1,0 +1,37 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c6b0556f..ddbe9dc5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -43,9 +43,11 @@ add_subdirectory(third_party/gflags)
+ include_directories(SYSTEM third_party/asio/include)
+ 
+ # Add additional compilation flags only after adding subprojects
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -Wall -Wextra -Werror -pedantic")
++#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -Wall -Wextra -Werror -pedantic")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native")
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsign-conversion -Wold-style-cast -Wno-unused-function")
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nested-anon-types -Wno-keyword-macro -Wno-deprecated-declarations")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
++#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nested-anon-types -Wno-keyword-macro -Wno-deprecated-declarations")
+ 
+ include_directories(${CMAKE_SOURCE_DIR}/src)
+ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party)
+diff --git a/src/msg_buffer.h b/src/msg_buffer.h
+index d2b6740d..22009da1 100644
+--- a/src/msg_buffer.h
++++ b/src/msg_buffer.h
+@@ -30,12 +30,13 @@ class MsgBuffer {
+   friend class Rpc<CTransport>;
+   friend class Session;
+ 
+- private:
++ public:
+   /// Return a pointer to the pre-appended packet header of this MsgBuffer
+   inline pkthdr_t *get_pkthdr_0() const {
+     return reinterpret_cast<pkthdr_t *>(buf_ - sizeof(pkthdr_t));
+   }
+ 
++ private:
+   /// Return a pointer to the nth packet header of this MsgBuffer.
+   /// get_pkthdr_0() is more efficient for retrieving the zeroth header.
+   inline pkthdr_t *get_pkthdr_n(size_t n) const {

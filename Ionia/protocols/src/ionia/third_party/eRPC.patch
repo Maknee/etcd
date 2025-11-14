@@ -1,0 +1,85 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c6b0556f..ddbe9dc5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -43,9 +43,11 @@ add_subdirectory(third_party/gflags)
+ include_directories(SYSTEM third_party/asio/include)
+ 
+ # Add additional compilation flags only after adding subprojects
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -Wall -Wextra -Werror -pedantic")
++#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -Wall -Wextra -Werror -pedantic")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native")
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsign-conversion -Wold-style-cast -Wno-unused-function")
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nested-anon-types -Wno-keyword-macro -Wno-deprecated-declarations")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
++#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-nested-anon-types -Wno-keyword-macro -Wno-deprecated-declarations")
+ 
+ include_directories(${CMAKE_SOURCE_DIR}/src)
+ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/third_party)
+diff --git a/src/msg_buffer.h b/src/msg_buffer.h
+index d2b6740d..9285e6ca 100644
+--- a/src/msg_buffer.h
++++ b/src/msg_buffer.h
+@@ -30,12 +30,13 @@ class MsgBuffer {
+   friend class Rpc<CTransport>;
+   friend class Session;
+ 
+- private:
++ public:
+   /// Return a pointer to the pre-appended packet header of this MsgBuffer
+   inline pkthdr_t *get_pkthdr_0() const {
+     return reinterpret_cast<pkthdr_t *>(buf_ - sizeof(pkthdr_t));
+   }
+ 
++ private:
+   /// Return a pointer to the nth packet header of this MsgBuffer.
+   /// get_pkthdr_0() is more efficient for retrieving the zeroth header.
+   inline pkthdr_t *get_pkthdr_n(size_t n) const {
+@@ -135,7 +136,7 @@ class MsgBuffer {
+    */
+   inline size_t get_data_size() const { return data_size_; }
+ 
+- private:
++ public:
+   /// The optional backing hugepage buffer. buffer.buf points to the zeroth
+   /// packet header, i.e., not application data.
+   Buffer buffer_;
+diff --git a/src/rpc_impl/rpc.cc b/src/rpc_impl/rpc.cc
+index 29769460..a0f0eb49 100644
+--- a/src/rpc_impl/rpc.cc
++++ b/src/rpc_impl/rpc.cc
+@@ -30,7 +30,7 @@ Rpc<TTr>::Rpc(Nexus *nexus, void *context, uint8_t rpc_id,
+ #endif
+   rt_assert(rpc_id != kInvalidRpcId, "Invalid Rpc ID");
+   rt_assert(!nexus->rpc_id_exists(rpc_id), "Rpc ID already exists");
+-  rt_assert(phy_port < kMaxPhyPorts, "Invalid physical port");
++  // rt_assert(phy_port < kMaxPhyPorts, "Invalid physical port");
+   rt_assert(numa_node_ < kMaxNumaNodes, "Invalid NUMA node");
+ 
+   tls_registry_ = &nexus->tls_registry_;
+diff --git a/src/session.h b/src/session.h
+index 92f0b882..c0a660ad 100644
+--- a/src/session.h
++++ b/src/session.h
+@@ -61,7 +61,7 @@ class Session {
+  public:
+   enum class Role : int { kServer, kClient };
+ 
+- private:
++ public:
+   Session(Role role, conn_req_uniq_token_t uniq_token, double freq_ghz,
+           double link_bandwidth)
+       : role_(role),
+diff --git a/src/sslot.h b/src/sslot.h
+index c847dc81..d328358c 100644
+--- a/src/sslot.h
++++ b/src/sslot.h
+@@ -32,7 +32,7 @@ class SSlot {
+   /// A non-preallocated msgbuf for possibly multi-packet responses
+   MsgBuffer dyn_resp_msgbuf_;
+ 
+- private:
++ public:
+   // Members that are valid for both server and client
+   Session *session_;  ///< Pointer to this sslot's session
+ 
