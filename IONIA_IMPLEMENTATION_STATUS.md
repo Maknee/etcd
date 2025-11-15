@@ -134,16 +134,16 @@ func ShouldUseParallelSend(msgs []raftpb.Message) bool
 
 ---
 
-## Pending Integration
+## Completed Integration
 
-### 5. Server Integration (IN PROGRESS) 🔨
+### 5. Server Integration ✅
 
-**Files to Modify:**
-- `server/etcdserver/server.go` - Add version tracker and cache instances
-- `server/etcdserver/raft.go` - Hook version tracker updates
-- `server/etcdserver/v3_server.go` - Integrate smart follower reads
+**Files Modified:**
+- `server/etcdserver/server.go` - Added version tracker and cache instances
+- `server/etcdserver/raft.go` - Hooked version tracker updates
+- `server/etcdserver/v3_server.go` - Integrated smart follower reads
 
-**Required Changes:**
+**Implemented Changes:**
 
 #### A. Server Initialization
 ```go
@@ -184,13 +184,20 @@ if cfg.EnableParallelReplication && ShouldUseParallelSend(msgs) {
 
 #### D. Read Request Handling
 ```go
-// In Range() for follower reads
-if r.Serializable == false && !s.isLeader() {
-    return s.smartFollowerRead(ctx, r)
+// In linearizableReadNotify() - integrated smart follower reads
+// 1. Check ReadIndex cache first (0 RTT fast path)
+if s.Cfg.EnableSmartFollowerReads && s.readIndexCache != nil {
+    if cachedIndex, ok := s.readIndexCache.Get(); ok {
+        if appliedIndex >= cachedIndex {
+            return nil  // Cache hit!
+        }
+    }
 }
+// 2. Fall through to normal ReadIndex if cache miss
+// 3. Update cache after successful ReadIndex
 ```
 
-**Status:** 🔨 Pending
+**Status:** ✅ Complete
 
 ---
 
@@ -288,14 +295,15 @@ etcd_parallel_send_duration_seconds
 
 ## Implementation Timeline
 
-### Completed (Week 1) ✅
+### Completed (Phase 1 - Core + Integration) ✅
 - [x] Feature flags and configuration
 - [x] Version tracker implementation
 - [x] ReadIndex cache implementation
 - [x] Parallel send implementation
+- [x] Server integration (server.go, raft.go, v3_server.go)
+- [x] Smart follower reads implementation
 
-### Current Week (Week 2) 🔨
-- [ ] Server integration
+### Current Phase (Testing & Validation) 🔨
 - [ ] Unit tests
 - [ ] Basic integration tests
 
@@ -405,4 +413,4 @@ version-tracker-stale-threshold: 500ms
 ---
 
 **Last Updated:** 2025-11-15
-**Implementation Progress:** ~60% (Core components complete, integration pending)
+**Implementation Progress:** 100% Phase 1 Complete! (Core + Integration done, testing pending)

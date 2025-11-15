@@ -1042,6 +1042,25 @@ func (s *EtcdServer) LinearizableReadNotify(ctx context.Context) error {
 }
 
 func (s *EtcdServer) linearizableReadNotify(ctx context.Context) error {
+	// IONIA: Try ReadIndex cache first for fast-path follower reads
+	if s.Cfg.EnableSmartFollowerReads && s.readIndexCache != nil {
+		if cachedIndex, ok := s.readIndexCache.Get(); ok {
+			// Cache hit! Verify we've applied at least this index
+			appliedIndex := s.getAppliedIndex()
+			if appliedIndex >= cachedIndex {
+				// Fast path: 0 RTT read!
+				if s.Logger().Core().Enabled(zap.DebugLevel) {
+					s.Logger().Debug("smart follower read: cache hit",
+						zap.Uint64("cached-index", cachedIndex),
+						zap.Uint64("applied-index", appliedIndex),
+					)
+				}
+				return nil
+			}
+			// Applied index behind cached index - fall through to normal path
+		}
+	}
+
 	s.readMu.RLock()
 	nc := s.readNotifier
 	s.readMu.RUnlock()
@@ -1055,6 +1074,11 @@ func (s *EtcdServer) linearizableReadNotify(ctx context.Context) error {
 	// wait for read state notification
 	select {
 	case <-nc.c:
+		// IONIA: Update ReadIndex cache on successful linearizable read
+		if nc.err == nil && s.Cfg.EnableSmartFollowerReads && s.readIndexCache != nil {
+			confirmedIndex := s.getAppliedIndex()
+			s.readIndexCache.Set(confirmedIndex)
+		}
 		return nc.err
 	case <-ctx.Done():
 		return ctx.Err()
