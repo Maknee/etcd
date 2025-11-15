@@ -104,6 +104,7 @@ func (rc *ReadIndexCache) Get() (uint64, bool) {
 }
 
 // Set updates the cache with a new ReadIndex value
+// Only updates if the new index is higher than the current cached index (monotonic)
 func (rc *ReadIndexCache) Set(index uint64) {
 	if !rc.enabled {
 		return
@@ -112,13 +113,16 @@ func (rc *ReadIndexCache) Set(index uint64) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
-	rc.cachedIndex = index
-	rc.cacheTimestamp = time.Now()
+	// Only update if new index is higher (monotonic)
+	if index > rc.cachedIndex {
+		rc.cachedIndex = index
+		rc.cacheTimestamp = time.Now()
 
-	if rc.lg.Core().Enabled(zap.DebugLevel) {
-		rc.lg.Debug("readindex cache updated",
-			zap.Uint64("index", index),
-		)
+		if rc.lg.Core().Enabled(zap.DebugLevel) {
+			rc.lg.Debug("readindex cache updated",
+				zap.Uint64("index", index),
+			)
+		}
 	}
 }
 
