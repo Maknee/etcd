@@ -204,6 +204,27 @@ type ServerConfig struct {
 
 	// Metrics types of metrics - should be either 'basic' or 'extensive'
 	Metrics string
+
+	// IONIA-inspired optimizations (Phase 1)
+	// EnableParallelReplication enables parallel sending of Raft messages to followers
+	// for reduced latency and better SSD I/O utilization.
+	EnableParallelReplication bool `json:"enable-parallel-replication"`
+
+	// EnableVersionTracking enables tracking of follower commit indexes for
+	// intelligent read routing to up-to-date replicas.
+	EnableVersionTracking bool `json:"enable-version-tracking"`
+
+	// EnableSmartFollowerReads enables optimized follower reads using version
+	// tracking and cached ReadIndex responses for improved read throughput.
+	EnableSmartFollowerReads bool `json:"enable-smart-follower-reads"`
+
+	// ReadIndexCacheDuration is the duration for which ReadIndex responses
+	// are cached (default: 50ms). Only used when EnableSmartFollowerReads is true.
+	ReadIndexCacheDuration time.Duration `json:"read-index-cache-duration"`
+
+	// VersionTrackerStaleThreshold is the maximum age of follower version info
+	// before considering it stale (default: 500ms).
+	VersionTrackerStaleThreshold time.Duration `json:"version-tracker-stale-threshold"`
 }
 
 // VerifyBootstrap sanity-checks the initial config for bootstrap case
