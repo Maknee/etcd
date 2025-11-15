@@ -150,10 +150,11 @@ func (vt *VersionTracker) SelectReplica(minIndex uint64) (types.ID, bool) {
 }
 
 // GetLag returns the replication lag (in entries) for a given follower
-// Returns 0 if follower is caught up or unknown
+// Returns 0 if follower is caught up, or currentIndex if disabled/unknown
 func (vt *VersionTracker) GetLag(id types.ID, currentIndex uint64) uint64 {
 	if !vt.enabled {
-		return 0
+		// When disabled, assume maximum lag since we don't track follower state
+		return currentIndex
 	}
 
 	vt.mu.RLock()

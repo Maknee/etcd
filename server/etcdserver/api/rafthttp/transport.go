@@ -55,6 +55,10 @@ type Transporter interface {
 	// If the id cannot be found in the transport, the message
 	// will be ignored.
 	Send(m []raftpb.Message)
+	// SendParallel sends out the given messages to remote peers in parallel.
+	// This is similar to Send but sends messages concurrently for better
+	// performance. IONIA-inspired optimization.
+	SendParallel(m []raftpb.Message)
 	// SendSnapshot sends out the given snapshot message to a remote peer.
 	// The behavior of SendSnapshot is similar to Send.
 	SendSnapshot(m snap.Message)

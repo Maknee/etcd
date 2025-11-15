@@ -781,6 +781,7 @@ type raftReadyHandler struct {
 	updateLead           func(lead uint64)
 	updateLeadership     func(newLeader bool)
 	updateCommittedIndex func(uint64)
+	server               *EtcdServer // IONIA: added for IONIA integration
 }
 
 func (s *EtcdServer) run() {
@@ -831,6 +832,7 @@ func (s *EtcdServer) run() {
 				s.setCommittedIndex(ci)
 			}
 		},
+		server: s, // IONIA: pass server reference for IONIA integration
 	}
 	s.r.start(rh)
 

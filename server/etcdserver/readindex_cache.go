@@ -54,9 +54,8 @@ func NewReadIndexCache(lg *zap.Logger, leaseDuration time.Duration, enabled bool
 	if lg == nil {
 		lg = zap.NewNop()
 	}
-	if leaseDuration == 0 {
-		leaseDuration = 50 * time.Millisecond
-	}
+	// Note: leaseDuration can be 0 to disable caching (always miss)
+	// Default is set in server config, not here
 
 	return &ReadIndexCache{
 		lg:            lg,

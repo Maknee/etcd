@@ -1527,6 +1527,7 @@ func newNopTransporter() rafthttp.Transporter {
 func (s *nopTransporter) Start() error                        { return nil }
 func (s *nopTransporter) Handler() http.Handler               { return nil }
 func (s *nopTransporter) Send(m []raftpb.Message)             {}
+func (s *nopTransporter) SendParallel(m []raftpb.Message)     {} // IONIA
 func (s *nopTransporter) SendSnapshot(m snap.Message)         {}
 func (s *nopTransporter) AddRemote(id types.ID, us []string)  {}
 func (s *nopTransporter) AddPeer(id types.ID, us []string)    {}

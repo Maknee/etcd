@@ -250,7 +250,7 @@ func (r *raftNode) start(rh *raftReadyHandler) {
 
 					// IONIA: Update version tracker with current follower progress
 					if rh.server.Cfg.EnableVersionTracking {
-						status := r.node.Status()
+						status := r.Node.Status()
 						rh.server.updateVersionTrackerFromRaftStatus(status)
 					}
 				}

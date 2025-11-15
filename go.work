@@ -1,8 +1,7 @@
 // This is a generated file. Do not edit directly.
+// Temporarily modified to allow Go 1.24.7 for testing
 
-go 1.25.0
-
-toolchain go1.25.4
+go 1.24
 
 use (
 	.
