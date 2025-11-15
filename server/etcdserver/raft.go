@@ -186,6 +186,8 @@ func (r *raftNode) start(rh *raftReadyHandler) {
 					newLeader := rd.SoftState.Lead != raft.None && rh.getLead() != rd.SoftState.Lead
 					if newLeader {
 						leaderChanges.Inc()
+						// IONIA: Invalidate ReadIndex cache on leader change
+						rh.server.invalidateReadIndexCacheOnLeaderChange()
 					}
 
 					if rd.SoftState.Lead == raft.None {
@@ -237,7 +239,20 @@ func (r *raftNode) start(rh *raftReadyHandler) {
 				// For more details, check raft thesis 10.2.1
 				if islead {
 					// gofail: var raftBeforeLeaderSend struct{}
-					r.transport.Send(r.processMessages(rd.Messages))
+					msgs := r.processMessages(rd.Messages)
+
+					// IONIA: Use parallel send if enabled and beneficial
+					if rh.server.Cfg.EnableParallelReplication && rafthttp.ShouldUseParallelSend(msgs) {
+						r.transport.SendParallel(msgs)
+					} else {
+						r.transport.Send(msgs)
+					}
+
+					// IONIA: Update version tracker with current follower progress
+					if rh.server.Cfg.EnableVersionTracking {
+						status := r.node.Status()
+						rh.server.updateVersionTrackerFromRaftStatus(status)
+					}
 				}
 
 				// Must save the snapshot file and WAL snapshot entry before saving any other entries or hardstate to

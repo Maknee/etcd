@@ -293,6 +293,10 @@ type EtcdServer struct {
 	// TODO: Replace with flush db in v3.7 assuming v3.6 bootstraps from db file.
 	forceDiskSnapshot bool
 	corruptionChecker CorruptionChecker
+
+	// IONIA-inspired optimization components (Phase 1)
+	versionTracker  *VersionTracker  // tracks follower commit indexes for smart read routing
+	readIndexCache  *ReadIndexCache  // caches ReadIndex responses for reduced read latency
 }
 
 // NewServer creates a new EtcdServer from the supplied configuration. The
@@ -412,6 +416,28 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 	// Set the hook after EtcdServer finishes the initialization to avoid
 	// the hook being called during the initialization process.
 	srv.be.SetTxPostLockInsideApplyHook(srv.getTxPostLockInsideApplyHook())
+
+	// Initialize IONIA-inspired optimization components (Phase 1)
+	srv.versionTracker = NewVersionTracker(
+		cfg.Logger,
+		cfg.VersionTrackerStaleThreshold,
+		cfg.EnableVersionTracking,
+	)
+	srv.readIndexCache = NewReadIndexCache(
+		cfg.Logger,
+		cfg.ReadIndexCacheDuration,
+		cfg.EnableSmartFollowerReads,
+	)
+	if cfg.EnableVersionTracking {
+		cfg.Logger.Info("IONIA version tracking enabled",
+			zap.Duration("stale-threshold", cfg.VersionTrackerStaleThreshold),
+		)
+	}
+	if cfg.EnableSmartFollowerReads {
+		cfg.Logger.Info("IONIA smart follower reads enabled",
+			zap.Duration("cache-duration", cfg.ReadIndexCacheDuration),
+		)
+	}
 
 	// TODO: move transport initialization near the definition of remote
 	tr := &rafthttp.Transport{
