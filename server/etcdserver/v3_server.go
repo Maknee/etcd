@@ -1049,6 +1049,7 @@ func (s *EtcdServer) linearizableReadNotify(ctx context.Context) error {
 			appliedIndex := s.getAppliedIndex()
 			if appliedIndex >= cachedIndex {
 				// Fast path: 0 RTT read!
+				smartFollowerReadsFastPath.Inc() // Prometheus metric
 				if s.Logger().Core().Enabled(zap.DebugLevel) {
 					s.Logger().Debug("smart follower read: cache hit",
 						zap.Uint64("cached-index", cachedIndex),
@@ -1058,6 +1059,9 @@ func (s *EtcdServer) linearizableReadNotify(ctx context.Context) error {
 				return nil
 			}
 			// Applied index behind cached index - fall through to normal path
+			smartFollowerReadsSlowPath.Inc() // Prometheus metric
+		} else {
+			smartFollowerReadsSlowPath.Inc() // Prometheus metric - cache miss
 		}
 	}
 

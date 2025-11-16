@@ -79,6 +79,7 @@ func (rc *ReadIndexCache) Get() (uint64, bool) {
 		rc.mu.RUnlock()
 		rc.mu.Lock()
 		rc.hits++
+		readIndexCacheHits.Inc() // Prometheus metric
 		rc.mu.Unlock()
 		rc.mu.RLock()
 
@@ -96,6 +97,7 @@ func (rc *ReadIndexCache) Get() (uint64, bool) {
 	rc.mu.RUnlock()
 	rc.mu.Lock()
 	rc.misses++
+	readIndexCacheMisses.Inc() // Prometheus metric
 	rc.mu.Unlock()
 	rc.mu.RLock()
 
@@ -140,6 +142,7 @@ func (rc *ReadIndexCache) Invalidate() {
 	rc.cacheTimestamp = time.Time{}
 
 	if oldIndex > 0 {
+		readIndexCacheInvalidations.Inc() // Prometheus metric
 		rc.lg.Info("readindex cache invalidated",
 			zap.Uint64("old-index", oldIndex),
 		)
@@ -178,6 +181,12 @@ func (rc *ReadIndexCache) GetStats() ReadIndexCacheStats {
 	total := stats.Hits + stats.Misses
 	if total > 0 {
 		stats.HitRate = float64(stats.Hits) / float64(total)
+	}
+
+	// Update Prometheus gauges
+	readIndexCacheHitRate.Set(stats.HitRate)
+	if stats.Valid {
+		readIndexCacheAge.Set(stats.Age.Seconds())
 	}
 
 	return stats

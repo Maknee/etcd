@@ -243,6 +243,8 @@ func (r *raftNode) start(rh *raftReadyHandler) {
 
 					// IONIA: Use parallel send if enabled and beneficial
 					if rh.server.Cfg.EnableParallelReplication && rafthttp.ShouldUseParallelSend(msgs) {
+						parallelSendBatches.Inc()                         // Prometheus metric
+						parallelSendMessages.Add(float64(len(msgs)))      // Prometheus metric
 						r.transport.SendParallel(msgs)
 					} else {
 						r.transport.Send(msgs)

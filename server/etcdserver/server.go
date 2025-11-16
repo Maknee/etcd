@@ -432,11 +432,22 @@ func NewServer(cfg config.ServerConfig) (srv *EtcdServer, err error) {
 		cfg.Logger.Info("IONIA version tracking enabled",
 			zap.Duration("stale-threshold", cfg.VersionTrackerStaleThreshold),
 		)
+		ioniaFeatureEnabled.WithLabelValues("version_tracking").Set(1)
+	} else {
+		ioniaFeatureEnabled.WithLabelValues("version_tracking").Set(0)
 	}
 	if cfg.EnableSmartFollowerReads {
 		cfg.Logger.Info("IONIA smart follower reads enabled",
 			zap.Duration("cache-duration", cfg.ReadIndexCacheDuration),
 		)
+		ioniaFeatureEnabled.WithLabelValues("smart_follower_reads").Set(1)
+	} else {
+		ioniaFeatureEnabled.WithLabelValues("smart_follower_reads").Set(0)
+	}
+	if cfg.EnableParallelReplication {
+		ioniaFeatureEnabled.WithLabelValues("parallel_replication").Set(1)
+	} else {
+		ioniaFeatureEnabled.WithLabelValues("parallel_replication").Set(0)
 	}
 
 	// TODO: move transport initialization near the definition of remote

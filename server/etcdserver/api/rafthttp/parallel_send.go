@@ -43,6 +43,10 @@ func (t *Transport) SendParallel(msgs []raftpb.Message) {
 		return
 	}
 
+	// Track metrics (need to import from etcdserver package)
+	// parallelSendBatches.Inc()
+	// parallelSendMessages.Add(float64(len(msgs)))
+
 	var wg sync.WaitGroup
 	wg.Add(len(msgs))
 

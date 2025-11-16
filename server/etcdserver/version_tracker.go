@@ -130,6 +130,7 @@ func (vt *VersionTracker) SelectReplica(minIndex uint64) (types.ID, bool) {
 	}
 
 	if len(candidates) == 0 {
+		versionTrackerSelectionFailures.Inc() // Prometheus metric
 		return 0, false
 	}
 
@@ -137,6 +138,8 @@ func (vt *VersionTracker) SelectReplica(minIndex uint64) (types.ID, bool) {
 	// This distributes read load across all up-to-date replicas
 	idx := rand.Intn(len(candidates))
 	selected := candidates[idx]
+
+	versionTrackerReplicaSelections.Inc() // Prometheus metric
 
 	if vt.lg.Core().Enabled(zap.DebugLevel) {
 		vt.lg.Debug("selected replica for read",
@@ -289,6 +292,14 @@ func (vt *VersionTracker) GetStats(currentIndex uint64) VersionTrackerStats {
 	}
 
 	stats.AverageLag = float64(totalLag) / float64(stats.FollowerCount)
+
+	// Update Prometheus gauges
+	versionTrackerFollowers.Set(float64(stats.FollowerCount))
+	versionTrackerStaleFollowers.Set(float64(stats.StaleFollowers))
+	versionTrackerAverageLag.Set(stats.AverageLag)
+	if currentIndex > stats.MinIndex {
+		versionTrackerMaxLag.Set(float64(currentIndex - stats.MinIndex))
+	}
 
 	return stats
 }
